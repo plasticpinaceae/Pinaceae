@@ -92,7 +92,7 @@ select:focus{border-color:var(--acc)}
 </head>
 <body>
 <header>
-<h1>S.S.T.G. <span>Simple Seamless Texture Generator · v1.2</span></h1>
+<h1>S.S.T.G. <span>Simple Seamless Texture Generator · v1.4</span></h1>
 <div class="hdr-btns">
 <button class="btn btn-s" id="langBtn" onclick="toggleLang()" style="font-size:9px;padding:3px 8px;min-width:32px">EN</button>
 <button class="btn btn-s" id="btnRandomize" onclick="randomize()"></button>
@@ -398,7 +398,7 @@ en: {
     color:'Color', layer:'Layer', pixelSize:'Pixel Size',
     warpStrength:'Warp Strength', stretchY:'Stretch Y', octaves:'Octaves',
     lineColor:'Line Color', majorColor:'Major Color', levels:'Levels',
-    lineWidth:'Line Width', majorEvery:'Major Every',
+    lineWidth:'Line Width', majorEvery:'Major Every', majorBold:'Bold Major Lines',
     feedRate:'Feed Rate (f)', killRate:'Kill Rate (k)', iterations:'Iterations',
     gridSize:'Grid Size', colorA:'Color A', colorB:'Color B',
     cellCount:'Cell Count', jitter:'Jitter', mergeThreshold:'Merge Threshold',
@@ -410,9 +410,10 @@ en: {
     lockSeed:'seed', lockPalette:'palette', lockPattern:'pattern', lockWarp:'warp',
     fill:'Fill Mode',
     exportSVG:'📐 Export SVG', uploadMask:'⬆ Upload Holes (diffusion start)', clearMask:'✕ Clear Holes',
-    maskActive:'reaction wall grows along contours', svgOnlyReaction:'SVG vector export is only available for Reaction Diffusion.',
+    maskActive:'reaction wall grows along contours', svgOnlyReaction:'SVG vector export is only available for Reaction Diffusion and Contour / Topo.',
     invertMask:'Invert mask', dropHint:'or drag & drop an image here',
-    lineDensity:'Line Density', lineThickness:'Line Thickness'
+    lineDensity:'Line Density', lineThickness:'Line Thickness',
+    svgSimplify:'SVG Simplify', svgSmooth:'SVG Smooth (Bezier)'
 },
 zh: {
     randomize:'🎲 随机生成', exportTile:'📥 导出贴图', export2x2:'📥 导出 2×2',
@@ -425,7 +426,7 @@ zh: {
     color:'颜色', layer:'图层', pixelSize:'像素大小',
     warpStrength:'扭曲强度', stretchY:'纵向拉伸', octaves:'细节层数',
     lineColor:'线条颜色', majorColor:'主线颜色', levels:'等高线层数',
-    lineWidth:'线条粗细', majorEvery:'主线间隔',
+    lineWidth:'线条粗细', majorEvery:'主线间隔', majorBold:'主线加粗',
     feedRate:'供给率 (f)', killRate:'消亡率 (k)', iterations:'迭代次数',
     gridSize:'网格大小', colorA:'颜色 A', colorB:'颜色 B',
     cellCount:'网格数', jitter:'随机偏移', mergeThreshold:'合并阈值',
@@ -437,9 +438,10 @@ zh: {
     lockSeed:'种子', lockPalette:'配色', lockPattern:'图案', lockWarp:'扭曲',
     fill:'填充模式',
     exportSVG:'📐 导出 SVG', uploadMask:'⬆ 上传孔位（扩散起点）', clearMask:'✕ 清除孔位',
-    maskActive:'反应墙沿孔位轮廓生长', svgOnlyReaction:'SVG 矢量导出仅支持「反应-扩散」图案。',
+    maskActive:'反应墙沿孔位轮廓生长', svgOnlyReaction:'SVG 矢量导出仅支持「反应-扩散」与「等高线/地形」图案。',
     invertMask:'反相蒙版', dropHint:'或拖拽图片到此处上传',
-    lineDensity:'线条密度', lineThickness:'线条粗细'
+    lineDensity:'线条密度', lineThickness:'线条粗细',
+    svgSimplify:'SVG 简化(减面)', svgSmooth:'SVG 平滑(贝塞尔)'
 }
 };
 let currentLang = 'en';
@@ -476,6 +478,8 @@ let state = {
     preset: 'M81 Woodland',
     resolution: 1024,
     exportRes: 1024,
+    svgSimplify: 1.0,   // RDP tolerance in grid units (0 = keep every vertex)
+    svgSmooth: 1.0,     // Catmull-Rom tension for Bezier smoothing (0 = straight polylines)
     showTile: false,
     showGrid: false,
     mutationStrength: .5,
@@ -528,7 +532,7 @@ function loadPreset(type, name) {
         state.params = {
             seed: base.seed || 42, bgColor: base.bgColor, lineColor: base.lineColor,
             majorColor: base.majorColor, levels: base.levels || 20,
-            scale: 1.5, lineWidth: 1.5, majorEvery: 5, fill: base.fill || false
+            scale: 0.3, lineWidth: 1.5, majorEvery: 5, majorBold: false, fill: base.fill || false
         };
     } else if (type === 'reaction') {
         state.params = {
@@ -664,6 +668,26 @@ function makeColor(label, val, onChange) {
     return d;
 }
 
+function makeToggle(label, id, val, onChange) {
+    const d = document.createElement('div');
+    d.className = 'ctrl ctrl-toggle';
+    const l = document.createElement('label');
+    l.style.display = 'flex';
+    l.style.alignItems = 'center';
+    l.style.gap = '8px';
+    l.style.cursor = 'pointer';
+    const inp = document.createElement('input');
+    inp.type = 'checkbox'; inp.id = id; inp.checked = !!val;
+    inp.style.width = 'auto';
+    inp.style.cursor = 'pointer';
+    inp.onchange = () => { onChange(inp.checked); scheduleRender(); };
+    const span = document.createElement('span');
+    span.textContent = label;
+    l.appendChild(inp); l.appendChild(span);
+    d.appendChild(l);
+    return d;
+}
+
 function buildParamControls() {
     const d = document.createElement('div');
     const p = state.params;
@@ -702,13 +726,17 @@ function buildParamControls() {
             d.appendChild(makeColor(`${t('color')} ${i + 1}`, c, v => { p.colors[i] = v; }));
         });
     } else if (t2 === 'contour') {
+        // lazy controls: thickness + density, highlighted with the theme accent color
+        const thkS = makeSlider(t('lineThickness'), 'clw', .5, 4, .1, p.lineWidth, v => { p.lineWidth = v; });
+        const denS = makeSlider(t('lineDensity'), 'clvl', 5, 40, 1, p.levels, v => { p.levels = v; });
+        thkS.classList.add('lazy'); denS.classList.add('lazy');
+        d.appendChild(thkS); d.appendChild(denS);
         d.appendChild(makeColor(t('background'), p.bgColor, v => { p.bgColor = v; }));
         d.appendChild(makeColor(t('lineColor'), p.lineColor, v => { p.lineColor = v; }));
         d.appendChild(makeColor(t('majorColor'), p.majorColor, v => { p.majorColor = v; }));
-        d.appendChild(makeSlider(t('scale'), 'cscl', .3, 4, .1, p.scale, v => { p.scale = v; }));
-        d.appendChild(makeSlider(t('levels'), 'clvl', 5, 40, 1, p.levels, v => { p.levels = v; }));
-        d.appendChild(makeSlider(t('lineWidth'), 'clw', .5, 4, .1, p.lineWidth, v => { p.lineWidth = v; }));
+        d.appendChild(makeSlider(t('scale'), 'cscl', .05, 8, .05, p.scale, v => { p.scale = v; }));
         d.appendChild(makeSlider(t('majorEvery'), 'cme', 2, 10, 1, p.majorEvery, v => { p.majorEvery = v; }));
+        d.appendChild(makeToggle(t('majorBold'), 'cmb', p.majorBold, v => { p.majorBold = v; }));
     } else if (t2 === 'reaction') {
         // lazy controls: two simple knobs that abstract the reaction params
         // highlighted with the theme accent color to stand out from advanced params
@@ -868,6 +896,11 @@ function buildResControls() {
     l.textContent = t('exportSize');
     ctrl.appendChild(l); ctrl.appendChild(sel);
     d.appendChild(ctrl);
+
+    // SVG vector-export optimization: reduce segment count (RDP) + Bezier smoothing.
+    // These only affect the SVG output, keeping extruded 3D models low-poly & smooth.
+    d.appendChild(makeSlider(t('svgSimplify'), 'svgsimp', 0, 5, .25, state.svgSimplify, v => { state.svgSimplify = v; }));
+    d.appendChild(makeSlider(t('svgSmooth'), 'svgsmth', 0, 1, .05, state.svgSmooth, v => { state.svgSmooth = v; }));
     return d;
 }
 
@@ -980,7 +1013,7 @@ function randomize() {
         if (!state.locks.pattern) { p.scale = mutate(p.scale, .3, 4); p.stretchY = mutate(p.stretchY, .5, 5); }
     } else if (state.type === 'contour') {
         if (!state.locks.palette) { p.bgColor = mutColor(p.bgColor); p.lineColor = mutColor(p.lineColor); p.majorColor = mutColor(p.majorColor); }
-        if (!state.locks.pattern) { p.scale = mutate(p.scale, .3, 4); p.levels = Math.round(mutate(p.levels, 5, 40)); }
+        if (!state.locks.pattern) { p.scale = mutate(p.scale, .05, 8); p.levels = Math.round(mutate(p.levels, 5, 40)); }
     } else if (state.type === 'reaction') {
         if (!state.locks.pattern) { p.f = mutate(p.f, .01, .08); p.k = mutate(p.k, .04, .075); p.threshold = mutate(p.threshold, .12, .45); }
         if (!state.locks.palette) { p.colorA = mutColor(p.colorA); p.colorB = mutColor(p.colorB); p.freezeColor = mutColor(p.freezeColor || p.colorA); }
@@ -1121,7 +1154,7 @@ function generateOrganicCamo(size, params) {
 }
 
 function generateContour(size, params) {
-    const {seed, bgColor, lineColor, majorColor, levels, scale, lineWidth, majorEvery, fill} = params;
+    const {seed, bgColor, lineColor, majorColor, levels, scale, lineWidth, majorEvery, majorBold, fill} = params;
     const canvas = document.createElement('canvas');
     canvas.width = size; canvas.height = size;
     const ctx = canvas.getContext('2d');
@@ -1169,7 +1202,7 @@ function generateContour(size, params) {
         const threshold = l / levels;
         const isMajor = l % majorEvery === 0;
         ctx.strokeStyle = isMajor ? majorColor : lineColor;
-        ctx.lineWidth = isMajor ? lineWidth * 2 : lineWidth;
+        ctx.lineWidth = (isMajor && majorBold) ? lineWidth * 2 : lineWidth;
         ctx.globalAlpha = isMajor ? 1 : .6;
 
         const getH = (x, y) => heights[((y % size) + size) % size * size + ((x % size) + size) % size];
@@ -1758,6 +1791,210 @@ function exportPNG2x2() {
 // SVG VECTOR EXPORT (marching squares iso-contour)
 // ============================================================
 function fieldToPaths(field, w, h, threshold) {
+    // Pad the field with a 1-cell BACKGROUND border so every iso-contour closes
+    // into a proper loop. Open contours dangling at the tile edge cannot be
+    // filled correctly with fill-rule:evenodd and were the real cause of the
+    // "broken lines / non-continuous shapes" artifact. Coordinates are shifted
+    // back by the 1-cell pad after chaining.
+    const BG = threshold - 1; // guaranteed < threshold => border counts as "outside"
+    const pw = w + 2, ph = h + 2;
+    const V = (x, y) => {
+        const rx = x - 1, ry = y - 1;
+        if (rx < 0 || ry < 0 || rx >= w || ry >= h) return BG;
+        return field[ry * w + rx];
+    };
+    const segs = [];
+    const key = (px, py) => Math.round(px * 1000) + ',' + Math.round(py * 1000);
+    for (let y = 0; y < ph - 1; y++) {
+        for (let x = 0; x < pw - 1; x++) {
+            const tl = V(x, y), tr = V(x + 1, y), br = V(x + 1, y + 1), bl = V(x, y + 1);
+            let ci = 0;
+            if (tl >= threshold) ci |= 8;
+            if (tr >= threshold) ci |= 4;
+            if (br >= threshold) ci |= 2;
+            if (bl >= threshold) ci |= 1;
+            if (ci === 0 || ci === 15) continue;
+            const lerp = (a, b) => { const dd = b - a; return Math.abs(dd) < 1e-9 ? 0.5 : (threshold - a) / dd; };
+            const top    = [x + lerp(tl, tr), y];
+            const right  = [x + 1, y + lerp(tr, br)];
+            const bottom = [x + lerp(bl, br), y + 1];
+            const left   = [x, y + lerp(tl, bl)];
+            const add = (p, q) => segs.push([p, q]);
+            switch (ci) {
+                case 1:  add(left, bottom); break;
+                case 2:  add(bottom, right); break;
+                case 3:  add(left, right); break;
+                case 4:  add(top, right); break;
+                case 5:  add(left, top); add(bottom, right); break;
+                case 6:  add(top, bottom); break;
+                case 7:  add(left, top); break;
+                case 8:  add(top, left); break;
+                case 9:  add(top, bottom); break;
+                case 10: add(top, right); add(bottom, left); break;
+                case 11: add(top, right); break;    // only TR outside -> cut top+right (was wrongly bottom+right)
+                case 12: add(left, right); break;
+                case 13: add(bottom, right); break; // only BR outside -> cut bottom+right (was wrongly right+top)
+                case 14: add(bottom, left); break;
+            }
+        }
+    }
+    // Link segments into polylines. Marching-squares segments are NOT guaranteed
+    // to be oriented consistently, so we chain BIDIRECTIONALLY: index every
+    // segment by BOTH endpoints, then grow each polyline from both its head and
+    // its tail, flipping segments as needed. This prevents the "broken / shattered
+    // line" artifact caused by the old single-direction (start->end only) chaining.
+    const pk = (p) => key(p[0], p[1]);
+    const adj = new Map(); // point-key -> [segIndexA, segIndexB, ...]
+    const addAdj = (k, i) => { let a = adj.get(k); if (!a) { a = []; adj.set(k, a); } a.push(i); };
+    segs.forEach((s, i) => { addAdj(pk(s[0]), i); addAdj(pk(s[1]), i); });
+    const used = new Array(segs.length).fill(false);
+    const paths = [];
+    const nextFrom = (k) => {
+        const cand = adj.get(k);
+        if (cand) for (const c of cand) if (!used[c]) return c;
+        return -1;
+    };
+    for (let i = 0; i < segs.length; i++) {
+        if (used[i]) continue;
+        used[i] = true;
+        const pts = [segs[i][0], segs[i][1]];
+        // grow tail: keep attaching a segment that shares the current end point
+        let guard = 0;
+        while (guard++ < segs.length + 5) {
+            const endPt = pts[pts.length - 1];
+            const k = pk(endPt);
+            const nxt = nextFrom(k);
+            if (nxt < 0) break;
+            used[nxt] = true;
+            const s = segs[nxt];
+            pts.push(pk(s[0]) === k ? s[1] : s[0]); // flip if needed
+            if (pk(pts[pts.length - 1]) === pk(pts[0])) break; // closed loop
+        }
+        // grow head: attach segments that share the current start point
+        guard = 0;
+        while (guard++ < segs.length + 5) {
+            const startPt = pts[0];
+            const k = pk(startPt);
+            if (pk(pts[pts.length - 1]) === k) break; // already closed
+            const nxt = nextFrom(k);
+            if (nxt < 0) break;
+            used[nxt] = true;
+            const s = segs[nxt];
+            pts.unshift(pk(s[0]) === k ? s[1] : s[0]);
+        }
+        if (pts.length >= 2) paths.push(pts);
+    }
+    // undo the 1-cell padding shift -> map coordinates back onto the [0..w]x[0..h] grid
+    return paths.map(pts => pts.map(p => [p[0] - 1, p[1] - 1]));
+}
+
+function pathsToD(paths, sx, sy) {
+    return paths.map(pts =>
+        'M' + pts.map(p => (p[0] * sx).toFixed(2) + ' ' + (p[1] * sy).toFixed(2)).join(' L') + ' Z'
+    ).join(' ');
+}
+
+// ---- SVG path optimization: simplify (RDP) + smooth (Catmull-Rom -> cubic Bezier) ----
+// The marching-squares output has one vertex per grid edge, so a single blob can be
+// hundreds of tiny segments. Extruding that in 3D software creates a huge face count.
+// We (1) drop redundant vertices with Ramer-Douglas-Peucker while preserving shape,
+// then (2) optionally replace the resulting polygon with a smooth closed Bezier curve.
+
+// perpendicular distance from point p to the infinite line through a-b
+function perpDist(p, a, b) {
+    const dx = b[0] - a[0], dy = b[1] - a[1];
+    const l2 = dx * dx + dy * dy;
+    if (l2 === 0) { const ex = p[0] - a[0], ey = p[1] - a[1]; return Math.hypot(ex, ey); }
+    const t = ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / l2;
+    const px = a[0] + t * dx, py = a[1] + t * dy;
+    return Math.hypot(p[0] - px, p[1] - py);
+}
+
+// Ramer-Douglas-Peucker on an OPEN polyline (keeps first & last)
+function rdp(pts, eps) {
+    if (pts.length < 3) return pts.slice();
+    const keep = new Array(pts.length).fill(false);
+    keep[0] = keep[pts.length - 1] = true;
+    const stack = [[0, pts.length - 1]];
+    while (stack.length) {
+        const [s, e] = stack.pop();
+        let maxD = 0, idx = -1;
+        for (let i = s + 1; i < e; i++) {
+            const d = perpDist(pts[i], pts[s], pts[e]);
+            if (d > maxD) { maxD = d; idx = i; }
+        }
+        if (maxD > eps && idx > 0) { keep[idx] = true; stack.push([s, idx], [idx, e]); }
+    }
+    return pts.filter((_, i) => keep[i]);
+}
+
+// RDP for a CLOSED loop (pts[0] === pts[last]). Split at the farthest point from the
+// start so the simplification is orientation-independent, then re-close.
+function simplifyClosed(pts, eps) {
+    if (!eps || eps <= 0 || pts.length < 5) return pts;
+    const same = pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1];
+    const open = same ? pts.slice(0, -1) : pts.slice();
+    const n = open.length;
+    if (n < 5) return pts;
+    let far = 0, fd = -1;
+    for (let i = 1; i < n; i++) {
+        const dx = open[i][0] - open[0][0], dy = open[i][1] - open[0][1];
+        const d = dx * dx + dy * dy;
+        if (d > fd) { fd = d; far = i; }
+    }
+    const A = open.slice(0, far + 1);
+    const B = open.slice(far).concat([open[0]]);
+    const ra = rdp(A, eps), rb = rdp(B, eps);
+    const merged = ra.slice(0, -1).concat(rb.slice(0, -1));
+    if (merged.length < 3) return pts;
+    merged.push(merged[0].slice());
+    return merged;
+}
+
+// Closed Catmull-Rom -> cubic Bezier path string. tension: 0 = none, 1 = standard.
+function closedBezierD(pts, sx, sy, tension) {
+    let P = pts;
+    const m = P.length;
+    if (m > 1 && P[0][0] === P[m - 1][0] && P[0][1] === P[m - 1][1]) P = P.slice(0, -1);
+    const n = P.length;
+    if (n < 3) return '';
+    const S = i => { const q = P[((i % n) + n) % n]; return [q[0] * sx, q[1] * sy]; };
+    const p0 = S(0);
+    let d = 'M' + p0[0].toFixed(2) + ' ' + p0[1].toFixed(2);
+    for (let i = 0; i < n; i++) {
+        const a = S(i - 1), b = S(i), c = S(i + 1), e = S(i + 2);
+        const c1x = b[0] + (c[0] - a[0]) / 6 * tension;
+        const c1y = b[1] + (c[1] - a[1]) / 6 * tension;
+        const c2x = c[0] - (e[0] - b[0]) / 6 * tension;
+        const c2y = c[1] - (e[1] - b[1]) / 6 * tension;
+        d += ' C' + c1x.toFixed(2) + ' ' + c1y.toFixed(2) + ' ' +
+             c2x.toFixed(2) + ' ' + c2y.toFixed(2) + ' ' +
+             c[0].toFixed(2) + ' ' + c[1].toFixed(2);
+    }
+    return d + ' Z';
+}
+
+// Convert paths to an SVG "d" attribute, applying simplify (tol) and smooth (tension).
+function pathsToOptimizedD(paths, sx, sy, tol, tension) {
+    return paths.map(pts => {
+        const s = simplifyClosed(pts, tol);
+        if (s.length < 4) return '';
+        if (tension > 0) return closedBezierD(s, sx, sy, tension);
+        return 'M' + s.map(p => (p[0] * sx).toFixed(2) + ' ' + (p[1] * sy).toFixed(2)).join(' L') + ' Z';
+    }).filter(Boolean).join(' ');
+}
+
+// ============================================================
+// CONTOUR (topo) STROKE VECTOR EXPORT
+// ============================================================
+// Unlike the reaction FILL export, contour iso-lines are STROKED. The pitfall we
+// hit before was padding the field with a background border: that padding is what
+// closes a FILL into clean loops, but on a STROKE it draws a fake rectangle along
+// the tile edge. So contourToPaths does NOT pad — lines reaching the boundary are
+// simply left OPEN. We still reuse the battle-tested bidirectional chaining (fixes
+// the old "shattered line" artifact) and the corrected marching-squares cases
+// 11/13 that were previously wrong.
+function contourToPaths(field, w, h, threshold) {
     const V = (x, y) => field[y * w + x];
     const segs = [];
     const key = (px, py) => Math.round(px * 1000) + ',' + Math.round(py * 1000);
@@ -1787,55 +2024,152 @@ function fieldToPaths(field, w, h, threshold) {
                 case 8:  add(top, left); break;
                 case 9:  add(top, bottom); break;
                 case 10: add(top, right); add(bottom, left); break;
-                case 11: add(bottom, right); break;
+                case 11: add(top, right); break;
                 case 12: add(left, right); break;
-                case 13: add(right, top); break;
+                case 13: add(bottom, right); break;
                 case 14: add(bottom, left); break;
             }
         }
     }
-    // link segments head-to-tail into polylines
-    const startMap = new Map();
-    segs.forEach((s, i) => {
-        const k = key(s[0][0], s[0][1]);
-        if (!startMap.has(k)) startMap.set(k, []);
-        startMap.get(k).push(i);
-    });
+    // bidirectional chaining (open polylines allowed; no forced closing)
+    const pk = (p) => key(p[0], p[1]);
+    const adj = new Map();
+    const addAdj = (k, i) => { let a = adj.get(k); if (!a) { a = []; adj.set(k, a); } a.push(i); };
+    segs.forEach((s, i) => { addAdj(pk(s[0]), i); addAdj(pk(s[1]), i); });
     const used = new Array(segs.length).fill(false);
     const paths = [];
+    const nextFrom = (k) => { const c = adj.get(k); if (c) for (const i of c) if (!used[i]) return i; return -1; };
     for (let i = 0; i < segs.length; i++) {
         if (used[i]) continue;
         used[i] = true;
-        const path = [segs[i][0], segs[i][1]];
-        const startK = key(path[0][0], path[0][1]);
-        let endK = key(segs[i][1][0], segs[i][1][1]);
+        const pts = [segs[i][0], segs[i][1]];
         let guard = 0;
         while (guard++ < segs.length + 5) {
-            const cand = startMap.get(endK);
-            let nxt = -1;
-            if (cand) for (const c2 of cand) if (!used[c2]) { nxt = c2; break; }
+            const k = pk(pts[pts.length - 1]);
+            const nxt = nextFrom(k);
             if (nxt < 0) break;
             used[nxt] = true;
-            path.push(segs[nxt][1]);
-            endK = key(segs[nxt][1][0], segs[nxt][1][1]);
-            if (endK === startK) break;
+            const s = segs[nxt];
+            pts.push(pk(s[0]) === k ? s[1] : s[0]);
+            if (pk(pts[pts.length - 1]) === pk(pts[0])) break; // closed loop
         }
-        if (path.length >= 3) paths.push(path);
+        guard = 0;
+        while (guard++ < segs.length + 5) {
+            const k = pk(pts[0]);
+            if (pk(pts[pts.length - 1]) === k) break; // already closed
+            const nxt = nextFrom(k);
+            if (nxt < 0) break;
+            used[nxt] = true;
+            const s = segs[nxt];
+            pts.unshift(pk(s[0]) === k ? s[1] : s[0]);
+        }
+        if (pts.length >= 2) paths.push(pts);
     }
     return paths;
 }
 
-function pathsToD(paths, sx, sy) {
-    return paths.map(pts =>
-        'M' + pts.map(p => (p[0] * sx).toFixed(2) + ' ' + (p[1] * sy).toFixed(2)).join(' L') + ' Z'
-    ).join(' ');
+// Open Catmull-Rom -> cubic Bezier (endpoints clamped). No Z: the stroke stays open.
+function openBezierD(pts, sx, sy, tension) {
+    const n = pts.length;
+    if (n < 2) return '';
+    const S = i => { const j = Math.max(0, Math.min(n - 1, i)); return [pts[j][0] * sx, pts[j][1] * sy]; };
+    const p0 = S(0);
+    let d = 'M' + p0[0].toFixed(2) + ' ' + p0[1].toFixed(2);
+    if (n === 2) { const p1 = S(1); return d + ' L' + p1[0].toFixed(2) + ' ' + p1[1].toFixed(2); }
+    for (let i = 0; i < n - 1; i++) {
+        const a = S(i - 1), b = S(i), c = S(i + 1), e = S(i + 2);
+        const c1x = b[0] + (c[0] - a[0]) / 6 * tension;
+        const c1y = b[1] + (c[1] - a[1]) / 6 * tension;
+        const c2x = c[0] - (e[0] - b[0]) / 6 * tension;
+        const c2y = c[1] - (e[1] - b[1]) / 6 * tension;
+        d += ' C' + c1x.toFixed(2) + ' ' + c1y.toFixed(2) + ' ' +
+             c2x.toFixed(2) + ' ' + c2y.toFixed(2) + ' ' +
+             c[0].toFixed(2) + ' ' + c[1].toFixed(2);
+    }
+    return d;
+}
+
+// Build a stroke "d" for contour polylines: RDP simplify + optional smoothing,
+// keeping closed loops closed (Z) and open lines open.
+function contourPathsToStrokeD(paths, sx, sy, tol, tension) {
+    return paths.map(pts => {
+        if (pts.length < 2) return '';
+        const closed = pts.length > 3 &&
+            pts[0][0] === pts[pts.length - 1][0] && pts[0][1] === pts[pts.length - 1][1];
+        if (closed) {
+            const s = simplifyClosed(pts, tol);
+            if (s.length < 3) return '';
+            if (tension > 0) return closedBezierD(s, sx, sy, tension);
+            return 'M' + s.map(p => (p[0] * sx).toFixed(2) + ' ' + (p[1] * sy).toFixed(2)).join(' L') + ' Z';
+        }
+        const s = tol > 0 ? rdp(pts, tol) : pts;
+        if (s.length < 2) return '';
+        if (tension > 0) return openBezierD(s, sx, sy, tension);
+        return 'M' + s.map(p => (p[0] * sx).toFixed(2) + ' ' + (p[1] * sy).toFixed(2)).join(' L');
+    }).filter(Boolean).join(' ');
+}
+
+// Recompute the seamless, 0..1-normalized height field used by the contour render,
+// at an arbitrary grid resolution for vector extraction (matches generateContour).
+function contourHeightField(g, params) {
+    const noise = new SimplexNoise4D(params.seed);
+    const heights = new Float32Array(g * g);
+    for (let y = 0; y < g; y++) {
+        const py = y / g;
+        for (let x = 0; x < g; x++) {
+            heights[y * g + x] = seamlessFBM(x / g, py, params.scale, 4, .5, 2, noise);
+        }
+    }
+    let mn = Infinity, mx = -Infinity;
+    for (let i = 0; i < heights.length; i++) { if (heights[i] < mn) mn = heights[i]; if (heights[i] > mx) mx = heights[i]; }
+    const range = mx - mn || 1;
+    for (let i = 0; i < heights.length; i++) heights[i] = (heights[i] - mn) / range;
+    return heights;
+}
+
+// Each iso-level -> stroked path(s). Minor & major lines are grouped into just two
+// <path>s (uniform style each) to keep the SVG compact.
+function exportContourSVG() {
+    const p = state.params;
+    const g = 512;                       // extraction grid (RDP simplifies afterwards)
+    const heights = contourHeightField(g, p);
+    const out = state.exportRes;
+    const sx = out / (g - 1), sy = out / (g - 1);
+    const tol = state.svgSimplify, ten = state.svgSmooth;
+    const sf = out / g;                  // stroke-width scale: grid px -> output units
+
+    let minorD = '', majorD = '';
+    for (let l = 1; l < p.levels; l++) {
+        const d = contourPathsToStrokeD(contourToPaths(heights, g, g, l / p.levels), sx, sy, tol, ten);
+        if (!d) continue;
+        if (l % p.majorEvery === 0) majorD += (majorD ? ' ' : '') + d;
+        else minorD += (minorD ? ' ' : '') + d;
+    }
+
+    const minorW = (p.lineWidth * sf).toFixed(2);
+    const majorW = ((p.majorBold ? p.lineWidth * 2 : p.lineWidth) * sf).toFixed(2);
+
+    let svg = '<?xml version="1.0" encoding="UTF-8"?>\n';
+    svg += `<svg xmlns="http://www.w3.org/2000/svg" width="${out}" height="${out}" viewBox="0 0 ${out} ${out}">\n`;
+    svg += `<rect width="${out}" height="${out}" fill="${p.bgColor}"/>\n`;
+    if (minorD) svg += `<path d="${minorD}" fill="none" stroke="${p.lineColor}" stroke-width="${minorW}" stroke-opacity="0.6" stroke-linejoin="round" stroke-linecap="round"/>\n`;
+    if (majorD) svg += `<path d="${majorD}" fill="none" stroke="${p.majorColor}" stroke-width="${majorW}" stroke-linejoin="round" stroke-linecap="round"/>\n`;
+    svg += '</svg>\n';
+
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const a = document.createElement('a');
+    a.download = `texture_contour_${out}px.svg`;
+    a.href = URL.createObjectURL(blob);
+    a.click();
+    URL.revokeObjectURL(a.href);
 }
 
 function exportSVG() {
-    if (state.type !== 'reaction') { alert(t('svgOnlyReaction')); return; }
+    if (state.type !== 'reaction' && state.type !== 'contour') { alert(t('svgOnlyReaction')); return; }
     document.getElementById('loading').classList.add('on');
     setTimeout(() => {
         try {
+            if (state.type === 'contour') { exportContourSVG(); document.getElementById('loading').classList.remove('on'); return; }
             // refresh field with current params (small size — only the field matters)
             generateReactionDiffusion(state.params.gridSize, state.params);
             const fld = lastReactionField;
@@ -1845,8 +2179,9 @@ function exportSVG() {
             const out = state.exportRes;
             const sx = out / w, sy = out / h;
 
-            const dV = pathsToD(fieldToPaths(v, w, h, threshold), sx, sy);
-            const dHoles = maskGrid ? pathsToD(fieldToPaths(maskGrid, w, h, 0.5), sx, sy) : '';
+            const tol = state.svgSimplify, ten = state.svgSmooth;
+            const dV = pathsToOptimizedD(fieldToPaths(v, w, h, threshold), sx, sy, tol, ten);
+            const dHoles = maskGrid ? pathsToOptimizedD(fieldToPaths(maskGrid, w, h, 0.5), sx, sy, tol, ten) : '';
 
             let svg = '<?xml version="1.0" encoding="UTF-8"?>\n';
             svg += `<svg xmlns="http://www.w3.org/2000/svg" width="${out}" height="${out}" viewBox="0 0 ${out} ${out}">\n`;
