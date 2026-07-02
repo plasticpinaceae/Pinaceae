@@ -11,17 +11,17 @@
 | --- | --- |
 | **正式名** | **S.S.T.G.** — Simple Seamless Texture Generator |
 | **中文名** | 简易无缝纹理生成器 |
-| **当前版本** | V1.1（见 `index.html` `<title>` 与页面顶栏） |
-| **GitHub 仓库名** | `Pinaceae`（历史遗留，作者账号主题，不改动以保 Pages URL） |
+| **当前版本** | v1.4.0（见 `index.html` `<title>` 与页面顶栏） |
+| **GitHub 仓库名** | `SSTG`（早期曾用名 `Pinaceae`，已弃用） |
 | **GitHub 用户** | [@plasticpinaceae](https://github.com/plasticpinaceae) |
-| **Live URL** | <https://plasticpinaceae.github.io/Pinaceae/> |
+| **Live URL** | <https://plasticpinaceae.github.io/SSTG/> |
 | **类型** | 纯前端 web 工具 / vibe coding 作品 |
 
 > ⚠️ 早期文档里出现过的 "Retro CRT Scanner / Pinaceae · 磷光扫描仪" 是**上一版被替换掉的项目**，请忽略，不要在改动中恢复那些概念。
 
 ## 2. 一句话说明
 
-在浏览器里生成 4 方连续（seamless）纹理，带 **2×2 平铺预览** 和 **PNG 导出**，纯原生 HTML/CSS/JS，单文件，零依赖。
+在浏览器里生成 4 方连续（seamless）纹理，带 **2×2 平铺预览**、**PNG 导出** 与 **SVG 矢量导出**（反应-扩散、等高线/地形），纯原生 HTML/CSS/JS，单文件，零依赖。
 
 ## 3. 技术栈
 
@@ -87,13 +87,13 @@ sstg/repo/
 - 📱 **移动端未适配**：桌面固定布局，侧栏 300px 硬编码
 - 🎨 **主题化未做**：目前只有金色 (`#c8a84e`) 一套，未来可加暖色/冷色变体
 - 🔌 **参数未抽出**：canvas 尺寸、预览倍率等仍写死
-- 📤 **导出格式单一**：只有 PNG，未来可加 JPG/WebP、可选尺寸
+- 📤 **导出格式**：PNG（单张 / 2×2）、SVG 矢量（反应-扩散、等高线/地形）；未来可加 JPG/WebP
 
 ## 8. 部署
 
 - 托管：GitHub Pages（自动）
 - 触发分支：`main`（根目录）
-- URL：<https://plasticpinaceae.github.io/Pinaceae/>
+- URL：<https://plasticpinaceae.github.io/SSTG/>
 - push 后约 1–2 分钟生效
 
 ## 9. AI 协作准则
@@ -109,11 +109,11 @@ sstg/repo/
 ## 10. 本地开发路径（作者机器）
 
 - 开发根：`D:\dev\sstg\`
-  - `repo/`         → Git 工作副本（远程 `origin` = GitHub `plasticpinaceae/Pinaceae`）
+  - `repo/`         → Git 工作副本（远程 `origin` = GitHub `plasticpinaceae/SSTG`）
   - `docs/`         → 开发笔记、参考图（不进仓库）
   - `assets-backup/`→ 原始字体等资源备份（不进仓库）
 
 ---
 
 **最后更新**：2026-07-02
-**文件版本**：2.0（对齐 S.S.T.G. 真实项目身份，废弃旧 CRT Scanner 描述）
+**文件版本**：2.1（仓库改名 Pinaceae→SSTG，版本对齐 v1.4.0，补充 SVG 导出）

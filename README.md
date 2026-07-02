@@ -2,7 +2,7 @@
 
 > 一个纯浏览器端的**无缝迷彩 / 纹理生成器**（Simple Seamless Texture Generator）。7 种图案类型、实时参数调节、2×2 平铺验证、PNG / SVG 导出。零依赖，单 HTML 文件，打开就能用。
 
-**在线体验 / Live Demo:** <https://plasticpinaceae.github.io/Pinaceae/>
+**在线体验 / Live Demo:** <https://plasticpinaceae.github.io/SSTG/>
 
 ![status](https://img.shields.io/badge/status-online-brightgreen) ![deps](https://img.shields.io/badge/dependencies-0-blue) ![stack](https://img.shields.io/badge/stack-vanilla%20JS-yellow) ![license](https://img.shields.io/badge/license-MIT-orange)
 
@@ -15,7 +15,7 @@ S.S.T.G. 是一个**在浏览器里直接生成 4 方连续（seamless）纹理*
 - **7 种纹理类型**：经典迷彩、数码迷彩、有机/丛林、等高线/地形、反应-扩散、碎片迷彩、眩目迷彩
 - 每种类型都有**内置预设**，配上侧栏参数（种子、配色、缩放、扭曲……）实时调节
 - **2×2 平铺预览** 实时验证接缝是否真无缝（`✓ 无缝` / `⚠ 检测到接缝`）
-- **一键导出**：单张 PNG、2×2 PNG，反应-扩散图案还可导出 **SVG 矢量**（线条可无限放大）
+- **一键导出**：单张 PNG、2×2 PNG，反应-扩散与等高线/地形图案还可导出 **SVG 矢量**（线条可无限放大）
 - **反应-扩散**支持上传图片作为「扩散起点」，图案沿你的图形轮廓生长（保留原比例、可反相）
 - **快照**功能，随手保存多个版本对比挑选
 - 中英双语界面，深色 UI + 金色高亮（`#c8a84e`）
@@ -24,7 +24,7 @@ S.S.T.G. 是一个**在浏览器里直接生成 4 方连续（seamless）纹理*
 
 ## 使用说明
 
-打开 [在线地址](https://plasticpinaceae.github.io/Pinaceae/) 即可，无需安装。
+打开 [在线地址](https://plasticpinaceae.github.io/SSTG/) 即可，无需安装。
 
 1. **选纹理类型** — 在左侧「纹理类型」里挑一种（迷彩 / 地形 / 反应-扩散 等）。
 2. **选预设** — 点「预设」里的方块套用一套现成风格，右上角小 `i` 可看说明。
@@ -35,7 +35,7 @@ S.S.T.G. 是一个**在浏览器里直接生成 4 方连续（seamless）纹理*
 7. **导出**
    - `📥 导出贴图`：导出单张无缝 PNG
    - `📥 导出 2×2`：导出 2×2 平铺后的 PNG
-   - `📐 导出 SVG`：导出矢量线条（**仅反应-扩散**类型可用，可无限缩放不糊）
+   - `📐 导出 SVG`：导出矢量线条（**反应-扩散**与**等高线/地形**类型可用，可无限缩放不糊）
    - 可在「导出尺寸」里选输出分辨率
 
 ### 反应-扩散进阶（图生纹理）
@@ -60,7 +60,7 @@ sstg/repo/
 └── dev.ps1                 ← 一键本地起服务器（Windows）
 ```
 
-> **仓库命名说明**：GitHub 仓库名是历史遗留的 `Pinaceae`（作者账号主题），但**项目正式名是 `S.S.T.G.`**。为不破坏 GitHub Pages 的 URL，仓库名保持不变，代码与文档一律以 `S.S.T.G.` 为准。
+> **仓库命名说明**：GitHub 仓库名为 `SSTG`，项目正式名 `S.S.T.G.`（Simple Seamless Texture Generator）。早期曾用名 `Pinaceae` 已弃用。
 
 ## 本地开发
 
@@ -94,7 +94,7 @@ git commit -m "feat: xxx"
 git push
 ```
 
-线上地址：<https://plasticpinaceae.github.io/Pinaceae/>
+线上地址：<https://plasticpinaceae.github.io/SSTG/>
 
 ## 给 AI 协作者
 
