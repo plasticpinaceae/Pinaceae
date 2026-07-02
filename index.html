@@ -42,6 +42,9 @@ header h1 span{font-family:'Inter','Segoe UI',system-ui,sans-serif;font-weight:4
 .ctrl:last-child{margin-bottom:0}
 .ctrl label{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--t2);margin-bottom:2px}
 .ctrl label .val{font-weight:700;color:var(--acc);font-size:10px;font-family:'Consolas',monospace;background:var(--acc-d);padding:0 4px;border-radius:2px}
+.ctrl.lazy{background:var(--acc-d);border:1px solid var(--acc-g);border-left:3px solid var(--acc);border-radius:4px;padding:7px 8px;margin-bottom:8px}
+.ctrl.lazy label{color:var(--acc);font-weight:600}
+.ctrl.lazy input[type=range]{background:rgba(200,168,78,.18)}
 input[type=range]{-webkit-appearance:none;width:100%;height:3px;border-radius:2px;background:var(--bg4);outline:none}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:11px;height:11px;border-radius:50%;background:var(--acc);cursor:pointer;box-shadow:0 0 5px var(--acc-g)}
 select{width:100%;padding:4px 6px;background:var(--bg4);color:var(--t1);border:1px solid var(--brd);border-radius:3px;font-size:11px;outline:none;cursor:pointer}
@@ -62,7 +65,7 @@ select:focus{border-color:var(--acc)}
 .lock-btn{padding:1px 5px;font-size:9px;border:1px solid var(--brd);border-radius:2px;background:transparent;color:var(--t3);cursor:pointer}
 .lock-btn.locked{border-color:var(--acc);color:var(--acc);background:var(--acc-d)}
 .canvas-area{flex:1;display:flex;align-items:center;justify-content:center;background:var(--bg);position:relative;overflow:hidden}
-#preview{image-rendering:pixelated}
+#preview{image-rendering:auto}
 .info-bar{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);background:rgba(17,17,19,.92);backdrop-filter:blur(12px);padding:3px 10px;border-radius:4px;font-size:9px;color:var(--t3);border:1px solid var(--brd);display:flex;gap:10px}
 .info-bar strong{color:var(--t2)}
 .check-bar{position:absolute;top:8px;right:8px;background:rgba(17,17,19,.92);backdrop-filter:blur(12px);padding:4px 8px;border-radius:4px;font-size:9px;border:1px solid var(--brd);display:flex;gap:8px;align-items:center}
@@ -89,11 +92,12 @@ select:focus{border-color:var(--acc)}
 </head>
 <body>
 <header>
-<h1>S.S.T.G. <span>Simple Seamless Texture Generator · v1.1</span></h1>
+<h1>S.S.T.G. <span>Simple Seamless Texture Generator · v1.2</span></h1>
 <div class="hdr-btns">
 <button class="btn btn-s" id="langBtn" onclick="toggleLang()" style="font-size:9px;padding:3px 8px;min-width:32px">EN</button>
 <button class="btn btn-s" id="btnRandomize" onclick="randomize()"></button>
 <button class="btn btn-s" id="btnExportTile" onclick="exportPNG()"></button>
+<button class="btn btn-s" id="btnExportSVG" onclick="exportSVG()"></button>
 <button class="btn btn-p" id="btnExport2x2" onclick="exportPNG2x2()"></button>
 </div>
 </header>
@@ -305,31 +309,36 @@ reaction: {
     'Spots': {
         info: '模拟豹纹/长颈鹿斑块。Turing 1952 年预测的"图灵斑"稳定圆形阵列。',
         info_en: 'Simulates leopard/giraffe spots. Stable circular arrays predicted by Turing in 1952.',
-        f: .035, k: .065, Du: .16, Dv: .08, iterations: 4000, seed: 42,
+        f: .035, k: .065, Du: .16, Dv: .08, iterations: 5000, gridSize: 220,
+        threshold: .28, sharpness: .75, seed: 42,
         colorA: '#000000', colorB: '#ffffff'
     },
     'Stripes': {
         info: '模拟斑马/热带鱼条纹。化学物质沿一方向自组织排列成平行结构。',
         info_en: 'Simulates zebra/tropical fish stripes. Chemicals self-organize into parallel structures.',
-        f: .025, k: .056, Du: .16, Dv: .08, iterations: 4000, seed: 77,
+        f: .025, k: .056, Du: .16, Dv: .08, iterations: 5000, gridSize: 220,
+        threshold: .25, sharpness: .8, seed: 77,
         colorA: '#000000', colorB: '#ffffff'
     },
     'Maze': {
         info: '斑点与条纹之间的过渡态，蜿蜒曲折的迷宫通道，复杂系统自组织行为。',
         info_en: 'Transitional state between spots and stripes, winding maze-like channels from self-organization.',
-        f: .029, k: .057, Du: .16, Dv: .08, iterations: 4000, seed: 55,
+        f: .029, k: .057, Du: .16, Dv: .08, iterations: 5000, gridSize: 220,
+        threshold: .25, sharpness: .8, seed: 55,
         colorA: '#000000', colorB: '#ffffff'
     },
     'Coral': {
         info: '模拟珊瑚虫骨骼分枝结构。密集有机分枝网络与珊瑚礁生长形态相似。',
         info_en: 'Simulates coral skeleton branching. Dense organic networks resembling coral reef growth.',
-        f: .055, k: .062, Du: .16, Dv: .08, iterations: 4000, seed: 33,
+        f: .055, k: .062, Du: .16, Dv: .08, iterations: 5000, gridSize: 220,
+        threshold: .3, sharpness: .78, seed: 33,
         colorA: '#000000', colorB: '#ffffff'
     },
     'Holes': {
         info: '斑点反相形态，类似蜂窝/海绵体/侵蚀岩石表面的多孔结构。',
         info_en: 'Inverse of spots pattern, resembling honeycomb/sponge/eroded rock porous structures.',
-        f: .039, k: .058, Du: .16, Dv: .08, iterations: 4000, seed: 88,
+        f: .039, k: .058, Du: .16, Dv: .08, iterations: 5000, gridSize: 220,
+        threshold: .3, sharpness: .78, seed: 88,
         colorA: '#000000', colorB: '#ffffff'
     }
 },
@@ -399,7 +408,11 @@ en: {
     saveSnapshot:'+ Save Snapshot', tile2x2:'2×2 Tile', grid:'Grid',
     seamless:'✓ Seamless', seamFail:'⚠ Seam detected', ready:'Ready',
     lockSeed:'seed', lockPalette:'palette', lockPattern:'pattern', lockWarp:'warp',
-    fill:'Fill Mode'
+    fill:'Fill Mode',
+    exportSVG:'📐 Export SVG', uploadMask:'⬆ Upload Holes (diffusion start)', clearMask:'✕ Clear Holes',
+    maskActive:'reaction wall grows along contours', svgOnlyReaction:'SVG vector export is only available for Reaction Diffusion.',
+    invertMask:'Invert mask', dropHint:'or drag & drop an image here',
+    lineDensity:'Line Density', lineThickness:'Line Thickness'
 },
 zh: {
     randomize:'🎲 随机生成', exportTile:'📥 导出贴图', export2x2:'📥 导出 2×2',
@@ -422,7 +435,11 @@ zh: {
     saveSnapshot:'+ 保存快照', tile2x2:'2×2 平铺', grid:'网格',
     seamless:'✓ 无缝', seamFail:'⚠ 检测到接缝', ready:'就绪',
     lockSeed:'种子', lockPalette:'配色', lockPattern:'图案', lockWarp:'扭曲',
-    fill:'填充模式'
+    fill:'填充模式',
+    exportSVG:'📐 导出 SVG', uploadMask:'⬆ 上传孔位（扩散起点）', clearMask:'✕ 清除孔位',
+    maskActive:'反应墙沿孔位轮廓生长', svgOnlyReaction:'SVG 矢量导出仅支持「反应-扩散」图案。',
+    invertMask:'反相蒙版', dropHint:'或拖拽图片到此处上传',
+    lineDensity:'线条密度', lineThickness:'线条粗细'
 }
 };
 let currentLang = 'en';
@@ -445,6 +462,7 @@ function toggleLang() {
 function updateHeaderButtons() {
     document.getElementById('btnRandomize').textContent = t('randomize');
     document.getElementById('btnExportTile').textContent = t('exportTile');
+    document.getElementById('btnExportSVG').textContent = t('exportSVG');
     document.getElementById('btnExport2x2').textContent = t('export2x2');
     document.getElementById('btnTile').textContent = t('tile2x2');
     document.getElementById('btnGrid').textContent = t('grid');
@@ -456,7 +474,7 @@ function updateHeaderButtons() {
 let state = {
     type: 'classic',
     preset: 'M81 Woodland',
-    resolution: 512,
+    resolution: 1024,
     exportRes: 1024,
     showTile: false,
     showGrid: false,
@@ -515,8 +533,11 @@ function loadPreset(type, name) {
     } else if (type === 'reaction') {
         state.params = {
             seed: base.seed || 42, f: base.f, k: base.k,
-            Du: base.Du, Dv: base.Dv, iterations: base.iterations || 4000,
-            colorA: base.colorA, colorB: base.colorB, gridSize: 128
+            Du: base.Du, Dv: base.Dv, iterations: base.iterations || 5000,
+            colorA: base.colorA, colorB: base.colorB, gridSize: base.gridSize || 220,
+            threshold: base.threshold ?? .28, sharpness: base.sharpness ?? 0,
+            density: base.density ?? .5, thickness: base.thickness ?? .5,
+            freezeColor: base.freezeColor || base.colorA, useMask: !!reactionMask
         };
     } else if (type === 'splinter') {
         state.params = {
@@ -689,12 +710,19 @@ function buildParamControls() {
         d.appendChild(makeSlider(t('lineWidth'), 'clw', .5, 4, .1, p.lineWidth, v => { p.lineWidth = v; }));
         d.appendChild(makeSlider(t('majorEvery'), 'cme', 2, 10, 1, p.majorEvery, v => { p.majorEvery = v; }));
     } else if (t2 === 'reaction') {
+        // lazy controls: two simple knobs that abstract the reaction params
+        // highlighted with the theme accent color to stand out from advanced params
+        const denS = makeSlider(t('lineDensity'), 'rden', 0, 1, .02, p.density ?? .5, v => { p.density = v; });
+        const thkS = makeSlider(t('lineThickness'), 'rthk', 0, 1, .02, p.thickness ?? .5, v => { p.thickness = v; });
+        denS.classList.add('lazy'); thkS.classList.add('lazy');
+        d.appendChild(denS); d.appendChild(thkS);
         d.appendChild(makeSlider(t('feedRate'), 'rf', .01, .08, .001, p.f, v => { p.f = v; }));
         d.appendChild(makeSlider(t('killRate'), 'rk', .04, .075, .001, p.k, v => { p.k = v; }));
         d.appendChild(makeSlider(t('iterations'), 'ri', 500, 8000, 100, p.iterations, v => { p.iterations = v; }));
         d.appendChild(makeSlider(t('gridSize'), 'rgs', 64, 256, 16, p.gridSize, v => { p.gridSize = v; }));
         d.appendChild(makeColor(t('colorA'), p.colorA, v => { p.colorA = v; }));
         d.appendChild(makeColor(t('colorB'), p.colorB, v => { p.colorB = v; }));
+        d.appendChild(buildReactionMaskUI(p));
     } else if (t2 === 'splinter') {
         d.appendChild(makeColor(t('background'), p.bg, v => { p.bg = v; }));
         d.appendChild(makeSlider(t('cellCount'), 'scell', 4, 20, 1, p.cellCount, v => { p.cellCount = v; }));
@@ -713,6 +741,99 @@ function buildParamControls() {
         });
     }
     return d;
+}
+
+function loadMaskFile(file, p) {
+    if (!file || !/^image\//.test(file.type)) return;
+    const img = new Image();
+    img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        reactionMask = { canvas: c, name: file.name };
+        p.useMask = true;
+        URL.revokeObjectURL(img.src);
+        buildSidebar();
+        scheduleRender();
+    };
+    img.src = URL.createObjectURL(file);
+}
+
+function buildReactionMaskUI(p) {
+    const wrap = document.createElement('div');
+    wrap.className = 'ctrl';
+    wrap.style.marginTop = '8px';
+
+    const fileInp = document.createElement('input');
+    fileInp.type = 'file';
+    fileInp.accept = 'image/*';
+    fileInp.style.display = 'none';
+    fileInp.onchange = (e) => loadMaskFile(e.target.files[0], p);
+
+    // upload button doubles as a drag & drop zone
+    const upBtn = document.createElement('button');
+    upBtn.className = 'btn btn-s';
+    upBtn.style.cssText = 'width:100%';
+    upBtn.textContent = t('uploadMask');
+    upBtn.onclick = () => fileInp.click();
+    const dOn = (ev) => { ev.preventDefault(); ev.stopPropagation(); upBtn.style.borderColor = 'var(--acc)'; upBtn.style.color = 'var(--acc)'; };
+    const dOff = (ev) => { ev.preventDefault(); ev.stopPropagation(); upBtn.style.borderColor = ''; upBtn.style.color = ''; };
+    const dDrop = (ev) => {
+        ev.preventDefault(); ev.stopPropagation(); upBtn.style.borderColor = ''; upBtn.style.color = '';
+        const f = ev.dataTransfer && ev.dataTransfer.files && ev.dataTransfer.files[0];
+        if (f) loadMaskFile(f, p);
+    };
+    ['dragenter', 'dragover'].forEach(evName => upBtn.addEventListener(evName, dOn));
+    ['dragleave', 'dragend'].forEach(evName => upBtn.addEventListener(evName, dOff));
+    upBtn.addEventListener('drop', dDrop);
+
+    const hint = document.createElement('div');
+    hint.style.cssText = 'font-size:8px;color:var(--t3);margin-top:3px;text-align:center';
+    hint.textContent = t('dropHint');
+
+    wrap.appendChild(fileInp);
+    wrap.appendChild(upBtn);
+    wrap.appendChild(hint);
+
+    if (reactionMask) {
+        // thumbnail preview (contain-fit, checkerboard bg for transparency)
+        const thumb = document.createElement('canvas');
+        const TS = 76;
+        thumb.width = TS; thumb.height = TS;
+        thumb.style.cssText = 'width:76px;height:76px;margin:6px auto 0;display:block;border:1px solid var(--brd);border-radius:4px;image-rendering:pixelated;background:#fff';
+        const tctx = thumb.getContext('2d');
+        tctx.fillStyle = '#fff'; tctx.fillRect(0, 0, TS, TS);
+        const iw = reactionMask.canvas.width, ih = reactionMask.canvas.height;
+        const sc = Math.min(TS / iw, TS / ih);
+        const dw = iw * sc, dh = ih * sc;
+        tctx.drawImage(reactionMask.canvas, (TS - dw) / 2, (TS - dh) / 2, dw, dh);
+        wrap.appendChild(thumb);
+
+        const status = document.createElement('div');
+        status.style.cssText = 'font-size:9px;color:var(--acc);margin-top:4px;word-break:break-all;line-height:1.4;text-align:center';
+        status.textContent = '✓ ' + reactionMask.name + ' · ' + t('maskActive');
+        wrap.appendChild(status);
+
+        // invert toggle
+        const invLbl = document.createElement('label');
+        invLbl.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:10px;color:var(--t2);margin-top:6px;cursor:pointer';
+        const invChk = document.createElement('input');
+        invChk.type = 'checkbox';
+        invChk.checked = !!maskInvert;
+        invChk.style.cssText = 'width:auto;margin:0';
+        invChk.onchange = () => { maskInvert = invChk.checked; scheduleRender(); };
+        invLbl.appendChild(invChk);
+        invLbl.appendChild(document.createTextNode(t('invertMask')));
+        wrap.appendChild(invLbl);
+
+        const clr = document.createElement('button');
+        clr.className = 'btn btn-s';
+        clr.style.cssText = 'width:100%;margin-top:6px';
+        clr.textContent = t('clearMask');
+        clr.onclick = () => { reactionMask = null; p.useMask = false; buildSidebar(); scheduleRender(); };
+        wrap.appendChild(clr);
+    }
+    return wrap;
 }
 
 function buildResControls() {
@@ -861,8 +982,8 @@ function randomize() {
         if (!state.locks.palette) { p.bgColor = mutColor(p.bgColor); p.lineColor = mutColor(p.lineColor); p.majorColor = mutColor(p.majorColor); }
         if (!state.locks.pattern) { p.scale = mutate(p.scale, .3, 4); p.levels = Math.round(mutate(p.levels, 5, 40)); }
     } else if (state.type === 'reaction') {
-        if (!state.locks.pattern) { p.f = mutate(p.f, .01, .08); p.k = mutate(p.k, .04, .075); }
-        if (!state.locks.palette) { p.colorA = mutColor(p.colorA); p.colorB = mutColor(p.colorB); }
+        if (!state.locks.pattern) { p.f = mutate(p.f, .01, .08); p.k = mutate(p.k, .04, .075); p.threshold = mutate(p.threshold, .12, .45); }
+        if (!state.locks.palette) { p.colorA = mutColor(p.colorA); p.colorB = mutColor(p.colorB); p.freezeColor = mutColor(p.freezeColor || p.colorA); }
     } else if (state.type === 'splinter') {
         if (!state.locks.palette) { p.bg = mutColor(p.bg); p.colors = p.colors.map(c => mutColor(c)); }
         if (!state.locks.pattern) { p.cellCount = Math.round(mutate(p.cellCount, 4, 20)); p.jitter = mutate(p.jitter, 0, 1); p.mergeThreshold = mutate(p.mergeThreshold, .05, .5); }
@@ -1099,65 +1220,219 @@ function generateContour(size, params) {
     return ctx.getImageData(0, 0, size, size);
 }
 
-function generateReactionDiffusion(size, params) {
-    const {seed, f, k, Du, Dv, iterations, colorA, colorB, gridSize} = params;
-    const w = gridSize, h = gridSize;
-    let u = [], v = [];
-    for (let y = 0; y < h; y++) {
-        u[y] = new Float32Array(w);
-        v[y] = new Float32Array(w);
-        for (let x = 0; x < w; x++) { u[y][x] = 1; v[y][x] = 0; }
-    }
+// ---- Reaction mask (uploaded image) helpers ----
+let reactionMask = null; // { canvas, name }
+let maskInvert = false;  // invert which side is treated as the hole
+let lastReactionField = null; // { v, maskGrid, w, h, threshold } — for SVG export
 
-    const rng = ((s) => () => { s = (s * 16807 + 0) % 2147483647; return (s - 1) / 2147483646; })(seed);
-    const spotCount = 5 + Math.floor(rng() * 10);
-    for (let s = 0; s < spotCount; s++) {
-        const cx = Math.floor(rng() * w), cy = Math.floor(rng() * h), r = 2 + Math.floor(rng() * 3);
-        for (let dy = -r; dy <= r; dy++) {
-            for (let dx = -r; dx <= r; dx++) {
-                if (dx*dx + dy*dy <= r*r) {
+function buildMaskGrid(w, h) {
+    if (!reactionMask) return null;
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const cx = c.getContext('2d');
+    // Fill the whole grid with WHITE first so the letterbox/pillarbox padding
+    // is treated as blank generation area, then draw the image preserving its
+    // ORIGINAL aspect ratio (contain-fit, centered) instead of stretching it.
+    cx.fillStyle = '#fff';
+    cx.fillRect(0, 0, w, h);
+    const iw = reactionMask.canvas.width, ih = reactionMask.canvas.height;
+    const scale = Math.min(w / iw, h / ih);
+    const dw = iw * scale, dh = ih * scale;
+    cx.drawImage(reactionMask.canvas, (w - dw) / 2, (h - dh) / 2, dw, dh);
+    const d = cx.getImageData(0, 0, w, h).data;
+    const g = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) {
+        const lum = (d[i * 4] + d[i * 4 + 1] + d[i * 4 + 2]) / 3;
+        let hole = lum < 128 ? 1 : 0; // black area of image = hole (keep-out); white = generation area
+        if (maskInvert) hole = hole ? 0 : 1;
+        g[i] = hole;
+    }
+    return g;
+}
+
+function generateReactionDiffusion(size, params) {
+    const {seed, f, k, Du, Dv, iterations, colorA, colorB, gridSize,
+           threshold, sharpness, freezeColor, useMask, density, thickness} = params;
+    // LAZY CONTROLS:
+    // density  -> feature scale via diffusion multiplier (denser = smaller features)
+    // thickness-> line width via the binarization threshold (thicker = lower threshold)
+    const dMul = (density == null) ? 1 : Math.exp(-(density - 0.5) * 3.2); // ~[4.95 .. 0.20] (wider range)
+    const DuE = Du * dMul, DvE = Dv * dMul;
+    const thr = (thickness == null) ? threshold : (0.45 - thickness * 0.33); // ~[0.45 .. 0.12]
+    const w = Math.round(gridSize), h = Math.round(gridSize), N = w * h;
+    let u = new Float32Array(N), v = new Float32Array(N);
+    u.fill(1);
+
+    const maskGrid = (useMask && reactionMask) ? buildMaskGrid(w, h) : null;
+    let contourSrc = null; // 1-px ring just outside each hole -> persistent reaction source (organic "stroke wall")
+
+    const rng = ((s) => () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; })(seed);
+    let holeCount = 0;
+    if (maskGrid) { for (let i = 0; i < N; i++) if (maskGrid[i]) holeCount++; }
+    if (maskGrid && holeCount > 0 && holeCount < N) {
+        // KEEP-OUT HOLES + CONTOUR AS DIFFUSION START BOUNDARY:
+        // holes stay empty (no-flux walls). The hole contour is a PERSISTENT reaction
+        // source, so an organic reaction-generated border ("stroke wall") forms along
+        // each hole outline and diffuses OUTWARD from there.
+        contourSrc = new Uint8Array(N);
+        for (let i = 0; i < N; i++) {
+            if (maskGrid[i]) { u[i] = 1; v[i] = 0; }
+        }
+        const BAND = 2; // ~2-cell wide ignition ring so the reaction reliably lights up
+        for (let y = 0; y < h; y++) {
+            for (let x = 0; x < w; x++) {
+                const i = y * w + x;
+                if (maskGrid[i]) continue; // holes stay empty
+                const xL = ((x - 1) + w) % w, xR = (x + 1) % w;
+                const yU = ((y - 1) + h) % h, yD = (y + 1) % h;
+                // 1-px contour: an outside cell 4-adjacent to a hole -> persistent source
+                if (maskGrid[y * w + xL] || maskGrid[y * w + xR] ||
+                    maskGrid[yU * w + x] || maskGrid[yD * w + x]) {
+                    contourSrc[i] = 1;
+                }
+                // ignition band (~2px) to light up the reaction from the start
+                let nearHole = false;
+                for (let dy = -BAND; dy <= BAND && !nearHole; dy++) {
+                    const yy = ((y + dy) % h + h) % h;
+                    for (let dx = -BAND; dx <= BAND; dx++) {
+                        const xx = ((x + dx) % w + w) % w;
+                        if (maskGrid[yy * w + xx]) { nearHole = true; break; }
+                    }
+                }
+                if (nearHole) {
+                    u[i] = 0.5;
+                    const vv = 0.25 + (rng() - 0.5) * 0.05;
+                    v[i] = vv < 0 ? 0 : vv;
+                }
+            }
+        }
+        // FILL THE WHOLE GENERATION REGION: scatter seeds across every non-hole cell
+        // so the maze pattern fills the entire allowed area (also covers the inverted
+        // region when the mask is inverted), not just a ring around the hole.
+        const genArea = N - holeCount;
+        const genSpots = Math.max(8, Math.floor(genArea / 700));
+        let placed = 0, tries = 0;
+        while (placed < genSpots && tries < genSpots * 10) {
+            tries++;
+            const cx = Math.floor(rng() * w), cy = Math.floor(rng() * h);
+            if (maskGrid[cy * w + cx]) continue; // don't seed inside a hole
+            const r = 2;
+            for (let dy = -r; dy <= r; dy++) {
+                for (let dx = -r; dx <= r; dx++) {
+                    if (dx * dx + dy * dy > r * r) continue;
                     const xx = ((cx + dx) % w + w) % w, yy = ((cy + dy) % h + h) % h;
-                    u[yy][xx] = .5; v[yy][xx] = .25;
+                    const ii = yy * w + xx;
+                    if (maskGrid[ii]) continue;
+                    u[ii] = 0.5; v[ii] = 0.25;
+                }
+            }
+            placed++;
+        }
+    } else {
+        // no mask (or degenerate mask): seed random V spots across the field
+        const spotCount = 8 + Math.floor(rng() * 12);
+        for (let s = 0; s < spotCount; s++) {
+            const cx = Math.floor(rng() * w), cy = Math.floor(rng() * h), r = 3 + Math.floor(rng() * 5);
+            for (let dy = -r; dy <= r; dy++) {
+                for (let dx = -r; dx <= r; dx++) {
+                    if (dx * dx + dy * dy <= r * r) {
+                        const xx = ((cx + dx) % w + w) % w, yy = ((cy + dy) % h + h) % h;
+                        const ii = yy * w + xx;
+                        u[ii] = .5; v[ii] = .25;
+                    }
                 }
             }
         }
     }
 
-    const getU = (y, x) => u[((y % h) + h) % h][((x % w) + w) % w];
-    const getV = (y, x) => v[((y % h) + h) % h][((x % w) + w) % w];
-
-    for (let i = 0; i < iterations; i++) {
-        const nu = [], nv = [];
+    // simulation (flat arrays + ping-pong, toroidal boundary).
+    // Holes are NO-FLUX reflecting walls: reactant never diffuses INTO a hole, so the
+    // contour seed is not drained and the pattern grows OUTWARD from the hole outline.
+    let nu = new Float32Array(N), nv = new Float32Array(N);
+    for (let it = 0; it < iterations; it++) {
         for (let y = 0; y < h; y++) {
-            nu[y] = new Float32Array(w);
-            nv[y] = new Float32Array(w);
+            const yUp = ((y - 1) + h) % h, yDn = (y + 1) % h;
+            const row = y * w, rowUp = yUp * w, rowDn = yDn * w;
             for (let x = 0; x < w; x++) {
-                const lapU = getU(y-1,x) + getU(y+1,x) + getU(y,x-1) + getU(y,x+1) - 4*u[y][x];
-                const lapV = getV(y-1,x) + getV(y+1,x) + getV(y,x-1) + getV(y,x+1) - 4*v[y][x];
-                const uv2 = u[y][x] * v[y][x] * v[y][x];
-                nu[y][x] = u[y][x] + Du * lapU - uv2 + f * (1 - u[y][x]);
-                nv[y][x] = v[y][x] + Dv * lapV + uv2 - (f + k) * v[y][x];
-                nu[y][x] = Math.max(0, Math.min(1, nu[y][x]));
-                nv[y][x] = Math.max(0, Math.min(1, nv[y][x]));
+                const i = row + x;
+                if (maskGrid && maskGrid[i]) { nu[i] = 1; nv[i] = 0; continue; } // hole stays empty
+                const xL = ((x - 1) + w) % w, xR = (x + 1) % w;
+                const uc = u[i], vc = v[i];
+                const iU = rowUp + x, iD = rowDn + x, iL = row + xL, iR = row + xR;
+                // reflect at hole neighbors (use center value) => no-flux wall
+                let uU = u[iU], uD = u[iD], uL = u[iL], uR = u[iR];
+                let vU = v[iU], vD = v[iD], vL = v[iL], vR = v[iR];
+                if (maskGrid) {
+                    if (maskGrid[iU]) { uU = uc; vU = vc; }
+                    if (maskGrid[iD]) { uD = uc; vD = vc; }
+                    if (maskGrid[iL]) { uL = uc; vL = vc; }
+                    if (maskGrid[iR]) { uR = uc; vR = vc; }
+                }
+                const lapU = uU + uD + uL + uR - 4 * uc;
+                const lapV = vU + vD + vL + vR - 4 * vc;
+                const uvv = uc * vc * vc;
+                let un = uc + DuE * lapU - uvv + f * (1 - uc);
+                let vn = vc + DvE * lapV + uvv - (f + k) * vc;
+                nu[i] = un < 0 ? 0 : un > 1 ? 1 : un;
+                nv[i] = vn < 0 ? 0 : vn > 1 ? 1 : vn;
             }
         }
-        u = nu; v = nv;
+        let t; t = u; u = nu; nu = t; t = v; v = nv; nv = t;
+        // persistent contour source: keep feeding the reaction at the hole outline so an
+        // organic reaction-generated border ("stroke wall") stays anchored to each hole.
+        if (contourSrc) {
+            for (let i = 0; i < N; i++) {
+                if (contourSrc[i]) { u[i] = 0.25; v[i] = 0.5; }
+            }
+        }
     }
 
+    lastReactionField = { v, maskGrid, w, h, threshold: thr };
+
+    // --- output: HARD-THRESHOLD binary (crisp pure black & white, no gray band) ---
     const imgData = new ImageData(size, size);
     const data = imgData.data;
-    const rgbA = hexToRGB(colorA), rgbB = hexToRGB(colorB);
-
+    const rgbA = hexToRGB(colorA), rgbB = hexToRGB(colorB), rgbF = hexToRGB(freezeColor || colorA);
+    // sharpness now = anti-alias amount: 0 => pure binary (no gray); >0 => supersampled soft edge
+    const aa = Math.max(0, Math.min(1, sharpness ?? 0));
+    const SS = aa > 0.01 ? 4 : 1;         // supersample factor when AA enabled
+    const invSS = 1 / SS, ss2 = SS * SS;
+    const sampleBilinear = (arr, fx, fy) => {
+        const x0 = Math.floor(fx), y0 = Math.floor(fy);
+        const tx = fx - x0, ty = fy - y0;
+        const x0m = ((x0 % w) + w) % w, x1m = (((x0 + 1) % w) + w) % w;
+        const y0m = ((y0 % h) + h) % h, y1m = (((y0 + 1) % h) + h) % h;
+        const a = arr[y0m * w + x0m], b = arr[y0m * w + x1m];
+        const c = arr[y1m * w + x0m], d = arr[y1m * w + x1m];
+        return a * (1 - tx) * (1 - ty) + b * tx * (1 - ty) + c * (1 - tx) * ty + d * tx * ty;
+    };
     for (let y = 0; y < size; y++) {
-        const gy = Math.floor((y / size) * h) % h;
         for (let x = 0; x < size; x++) {
-            const gx = Math.floor((x / size) * w) % w;
-            const t = v[gy][gx];
             const idx = (y * size + x) * 4;
-            data[idx]   = Math.round(rgbA[0] + (rgbB[0] - rgbA[0]) * t);
-            data[idx+1] = Math.round(rgbA[1] + (rgbB[1] - rgbA[1]) * t);
-            data[idx+2] = Math.round(rgbA[2] + (rgbB[2] - rgbA[2]) * t);
-            data[idx+3] = 255;
+            const cfx = ((x + 0.5) / size) * w, cfy = ((y + 0.5) / size) * h;
+            // KEEP-OUT HOLE: inside the uploaded shape stays empty (background), pattern flows around it
+            if (maskGrid && sampleBilinear(maskGrid, cfx, cfy) >= 0.5) {
+                data[idx] = rgbA[0]; data[idx + 1] = rgbA[1]; data[idx + 2] = rgbA[2]; data[idx + 3] = 255;
+                continue;
+            }
+            let frac;
+            if (SS === 1) {
+                frac = sampleBilinear(v, cfx, cfy) >= thr ? 1 : 0; // hard threshold -> pure B/W
+            } else {
+                let acc = 0;
+                for (let sy = 0; sy < SS; sy++) {
+                    const ssy = ((y + (sy + 0.5) * invSS) / size) * h;
+                    for (let sx = 0; sx < SS; sx++) {
+                        const ssx = ((x + (sx + 0.5) * invSS) / size) * w;
+                        if (sampleBilinear(v, ssx, ssy) >= thr) acc++;
+                    }
+                }
+                frac = acc / ss2;
+            }
+            data[idx]     = Math.round(rgbA[0] + (rgbB[0] - rgbA[0]) * frac);
+            data[idx + 1] = Math.round(rgbA[1] + (rgbB[1] - rgbA[1]) * frac);
+            data[idx + 2] = Math.round(rgbA[2] + (rgbB[2] - rgbA[2]) * frac);
+            data[idx + 3] = 255;
         }
     }
     return imgData;
@@ -1332,25 +1607,37 @@ function displayResult(size) {
     const aw = area.clientWidth - 32;
     const ah = area.clientHeight - 32;
 
+    // Render the preview at the device pixel ratio (crisp on HiDPI) and use
+    // high-quality smoothing for hi-res sources, keeping only tiny (<=256px)
+    // "pixel-art" sources blocky. This removes the blur + jagged edges.
+    const dpr = Math.max(1, Math.min(3, window.devicePixelRatio || 1));
+    const pixel = size <= 256;                 // low-res previews stay crisp/blocky
+    canvas.style.imageRendering = pixel ? 'pixelated' : 'auto';
+
     if (state.showTile) {
         const dispSize = Math.min(aw, ah);
         const tileSize = Math.floor(dispSize / 2);
-        canvas.width = tileSize * 2;
-        canvas.height = tileSize * 2;
-        canvas.style.width = (tileSize * 2) + 'px';
-        canvas.style.height = (tileSize * 2) + 'px';
-        ctx.imageSmoothingEnabled = false;
+        const cssW = tileSize * 2;
+        canvas.style.width = cssW + 'px';
+        canvas.style.height = cssW + 'px';
+        canvas.width = Math.round(cssW * dpr);
+        canvas.height = Math.round(cssW * dpr);
+        // NOTE: set smoothing AFTER resizing (resizing resets context state)
+        ctx.imageSmoothingEnabled = !pixel;
+        ctx.imageSmoothingQuality = 'high';
+        const bTile = Math.round(canvas.width / 2);
         for (let ty = 0; ty < 2; ty++)
             for (let tx = 0; tx < 2; tx++)
-                ctx.drawImage(genCanvas, 0, 0, size, size, tx * tileSize, ty * tileSize, tileSize, tileSize);
+                ctx.drawImage(genCanvas, 0, 0, size, size, tx * bTile, ty * bTile, bTile, bTile);
     } else {
-        const dispSize = Math.min(aw, ah, 512);
-        canvas.width = dispSize;
-        canvas.height = dispSize;
+        const dispSize = Math.min(aw, ah, 640);
         canvas.style.width = dispSize + 'px';
         canvas.style.height = dispSize + 'px';
-        ctx.imageSmoothingEnabled = false;
-        ctx.drawImage(genCanvas, 0, 0, size, size, 0, 0, dispSize, dispSize);
+        canvas.width = Math.round(dispSize * dpr);
+        canvas.height = Math.round(dispSize * dpr);
+        ctx.imageSmoothingEnabled = !pixel;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(genCanvas, 0, 0, size, size, 0, 0, canvas.width, canvas.height);
     }
 
     if (state.showGrid) {
@@ -1463,6 +1750,119 @@ function exportPNG2x2() {
         a.download = `texture_${state.type}_2x2_${size}px.png`;
         a.href = c.toDataURL('image/png');
         a.click();
+        document.getElementById('loading').classList.remove('on');
+    }, 50);
+}
+
+// ============================================================
+// SVG VECTOR EXPORT (marching squares iso-contour)
+// ============================================================
+function fieldToPaths(field, w, h, threshold) {
+    const V = (x, y) => field[y * w + x];
+    const segs = [];
+    const key = (px, py) => Math.round(px * 1000) + ',' + Math.round(py * 1000);
+    for (let y = 0; y < h - 1; y++) {
+        for (let x = 0; x < w - 1; x++) {
+            const tl = V(x, y), tr = V(x + 1, y), br = V(x + 1, y + 1), bl = V(x, y + 1);
+            let ci = 0;
+            if (tl >= threshold) ci |= 8;
+            if (tr >= threshold) ci |= 4;
+            if (br >= threshold) ci |= 2;
+            if (bl >= threshold) ci |= 1;
+            if (ci === 0 || ci === 15) continue;
+            const lerp = (a, b) => { const dd = b - a; return Math.abs(dd) < 1e-9 ? 0.5 : (threshold - a) / dd; };
+            const top    = [x + lerp(tl, tr), y];
+            const right  = [x + 1, y + lerp(tr, br)];
+            const bottom = [x + lerp(bl, br), y + 1];
+            const left   = [x, y + lerp(tl, bl)];
+            const add = (p, q) => segs.push([p, q]);
+            switch (ci) {
+                case 1:  add(left, bottom); break;
+                case 2:  add(bottom, right); break;
+                case 3:  add(left, right); break;
+                case 4:  add(top, right); break;
+                case 5:  add(left, top); add(bottom, right); break;
+                case 6:  add(top, bottom); break;
+                case 7:  add(left, top); break;
+                case 8:  add(top, left); break;
+                case 9:  add(top, bottom); break;
+                case 10: add(top, right); add(bottom, left); break;
+                case 11: add(bottom, right); break;
+                case 12: add(left, right); break;
+                case 13: add(right, top); break;
+                case 14: add(bottom, left); break;
+            }
+        }
+    }
+    // link segments head-to-tail into polylines
+    const startMap = new Map();
+    segs.forEach((s, i) => {
+        const k = key(s[0][0], s[0][1]);
+        if (!startMap.has(k)) startMap.set(k, []);
+        startMap.get(k).push(i);
+    });
+    const used = new Array(segs.length).fill(false);
+    const paths = [];
+    for (let i = 0; i < segs.length; i++) {
+        if (used[i]) continue;
+        used[i] = true;
+        const path = [segs[i][0], segs[i][1]];
+        const startK = key(path[0][0], path[0][1]);
+        let endK = key(segs[i][1][0], segs[i][1][1]);
+        let guard = 0;
+        while (guard++ < segs.length + 5) {
+            const cand = startMap.get(endK);
+            let nxt = -1;
+            if (cand) for (const c2 of cand) if (!used[c2]) { nxt = c2; break; }
+            if (nxt < 0) break;
+            used[nxt] = true;
+            path.push(segs[nxt][1]);
+            endK = key(segs[nxt][1][0], segs[nxt][1][1]);
+            if (endK === startK) break;
+        }
+        if (path.length >= 3) paths.push(path);
+    }
+    return paths;
+}
+
+function pathsToD(paths, sx, sy) {
+    return paths.map(pts =>
+        'M' + pts.map(p => (p[0] * sx).toFixed(2) + ' ' + (p[1] * sy).toFixed(2)).join(' L') + ' Z'
+    ).join(' ');
+}
+
+function exportSVG() {
+    if (state.type !== 'reaction') { alert(t('svgOnlyReaction')); return; }
+    document.getElementById('loading').classList.add('on');
+    setTimeout(() => {
+        try {
+            // refresh field with current params (small size — only the field matters)
+            generateReactionDiffusion(state.params.gridSize, state.params);
+            const fld = lastReactionField;
+            if (!fld) { document.getElementById('loading').classList.remove('on'); return; }
+            const { v, maskGrid, w, h, threshold } = fld;
+            const p = state.params;
+            const out = state.exportRes;
+            const sx = out / w, sy = out / h;
+
+            const dV = pathsToD(fieldToPaths(v, w, h, threshold), sx, sy);
+            const dHoles = maskGrid ? pathsToD(fieldToPaths(maskGrid, w, h, 0.5), sx, sy) : '';
+
+            let svg = '<?xml version="1.0" encoding="UTF-8"?>\n';
+            svg += `<svg xmlns="http://www.w3.org/2000/svg" width="${out}" height="${out}" viewBox="0 0 ${out} ${out}">\n`;
+            svg += `<rect width="${out}" height="${out}" fill="${p.colorA}"/>\n`;
+            if (dV) svg += `<path d="${dV}" fill="${p.colorB}" fill-rule="evenodd" shape-rendering="geometricPrecision"/>\n`;
+            // keep-out holes: punch them back to background so mounting holes stay empty
+            if (dHoles) svg += `<path d="${dHoles}" fill="${p.colorA}" fill-rule="evenodd" shape-rendering="geometricPrecision"/>\n`;
+            svg += '</svg>\n';
+
+            const blob = new Blob([svg], { type: 'image/svg+xml' });
+            const a = document.createElement('a');
+            a.download = `texture_reaction_${out}px.svg`;
+            a.href = URL.createObjectURL(blob);
+            a.click();
+            URL.revokeObjectURL(a.href);
+        } catch (e) { console.error(e); }
         document.getElementById('loading').classList.remove('on');
     }, 50);
 }

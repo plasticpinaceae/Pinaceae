@@ -1,66 +1,86 @@
-# Pinaceae · Retro CRT Scanner 🟢
+# S.S.T.G. · Simple Seamless Texture Generator
 
-> 一个用 AI Vibe Coding 做的 EVA 风格 10×10 磷光扫描仪 —— 纯 HTML/CSS/JS，零依赖，单文件就能跑。
+> 一个纯浏览器端的**无缝纹理生成器**（Simple Seamless Texture Generator）。零依赖，单 HTML 文件。
 
-**🖥️ Live Demo:** **https://plasticpinaceae.github.io/Pinaceae/**
+**Live Demo:** <https://plasticpinaceae.github.io/Pinaceae/>
 
-![preview](https://img.shields.io/badge/status-online-brightgreen) ![deps](https://img.shields.io/badge/dependencies-0-blue) ![license](https://img.shields.io/badge/license-MIT-orange)
+![status](https://img.shields.io/badge/status-online-brightgreen) ![deps](https://img.shields.io/badge/dependencies-0-blue) ![license](https://img.shields.io/badge/license-MIT-orange)
 
 ---
 
-## 🌿 这是什么
+## 这是什么
 
-一个仿照 **新世纪福音战士 (EVA / NERV)** 风格设计的复古 CRT 显示器界面。
+S.S.T.G. 是一个**在浏览器里直接生成 4 方连续（seamless）纹理**的工具：
 
-- 真实的 **磷光绿 CRT 扫描线** 和噪点效果
-- **10×10 探测点阵** 动画
-- 整个 "设备外壳"（金属边框、铆钉、电源指示灯）全部用 **CSS 画出来**，没用任何图片
-- **单 HTML 文件**，双击就能打开看效果
+- 内置多套 preset（几何图案、条纹、噪点等），可用侧栏参数实时调节
+- 中央画布 + **2×2 平铺预览** 区，实时验证接缝是否真的无缝
+- 一键导出 PNG（`canvas.toDataURL`）
+- 深色 UI，配金色高亮 (`#c8a84e`)，Microgramma 标题字体
 
-## 🚀 怎么跑起来
+技术栈：**纯原生 HTML + CSS + JavaScript**，无框架，无构建工具，无 npm。
 
-### 方式 1：直接在线看（最快）
-点这个链接 → **https://plasticpinaceae.github.io/Pinaceae/**
+## 目录说明
 
-### 方式 2：本地双击
-1. 把这个仓库下载下来（点页面右上角绿色 `Code` 按钮 → `Download ZIP`）
-2. 解压
-3. 双击 `index.html`，浏览器自动打开 ✓
+```
+sstg/repo/
+├── index.html              ← 主程序（HTML/CSS/JS 全部内联）
+├── fonts/
+│   ├── MicrogrammaD-Bold.otf
+│   └── MicrogrammaD-Medium.otf
+├── .ai/
+│   └── PROJECT.md          ← AI 协作入口，接手前先读这个
+├── AI_CONTEXT.md           ← 项目背景与设计约定（详细版）
+├── README.md               ← 你正在看的
+├── LICENSE                 ← MIT
+├── .gitignore
+└── dev.ps1                 ← 一键本地起服务器（Windows）
+```
 
-### 方式 3：本地起一个静态服务器（开发用）
-```bash
-cd Pinaceae
+> **仓库命名说明**：GitHub 仓库名是历史遗留的 `Pinaceae`（作者账号主题），但**项目正式名是 `S.S.T.G.`**。为了不破坏 GitHub Pages 的 URL，仓库名保持不变，所有代码与文档以 `S.S.T.G.` 为准。
+
+## 本地开发
+
+### 方式 1：双击 `index.html`
+最快，但 `file://` 协议下浏览器**可能拒绝加载 .otf 字体**（会 fallback 到 Inter/系统字体）。如果你要看完整效果，请用方式 2。
+
+### 方式 2：本地静态服务器（推荐）
+
+Windows PowerShell：
+
+```powershell
+cd D:\dev\sstg\repo
+./dev.ps1        # 会启动 python http.server 并打开浏览器
+```
+
+或手动：
+
+```powershell
+cd D:\dev\sstg\repo
 python -m http.server 8000
-# 然后浏览器打开 http://localhost:8000
+# 浏览器打开 http://localhost:8000
 ```
 
-## 📁 项目结构
+## 部署
 
-```
-Pinaceae/
-├── index.html              ← 主程序，所有逻辑都在这一个文件里
-├── MicrogrammaD-Bold.otf   ← UI 用的字体
-├── MicrogrammaD-Medium.otf ← UI 用的字体
-├── README.md               ← 你现在看的这个
-├── AI_CONTEXT.md           ← 给 AI 协作时读的上下文（重要！）
-└── LICENSE                 ← MIT 开源协议
+推送到 `main` 分支后，GitHub Pages 会在 1–2 分钟内自动更新：
+
+```bash
+git add .
+git commit -m "feat: xxx"
+git push
 ```
 
-## 🤖 给未来 AI 协作者的话
+线上地址：<https://plasticpinaceae.github.io/Pinaceae/>
 
-如果你（或你正在用的 AI）想继续开发这个项目，**请先读 [`AI_CONTEXT.md`](./AI_CONTEXT.md)**，
-里面写了项目背景、设计意图、技术栈、已知问题，能让 AI 立刻进入状态。
+## 给 AI 协作者
 
-## 🎨 灵感来源
+如果你是 AI，接手这个项目前请**先读 [`.ai/PROJECT.md`](./.ai/PROJECT.md)**，
+它是最新的项目入口；`AI_CONTEXT.md` 提供更详细的背景与设计约定。
 
-- 新世纪福音战士 (Neon Genesis Evangelion) NERV 总部监控屏
-- 老式 CRT 磷光显示器（P1 phosphor，#9eff8a 色系）
-- 80 年代军工/科研设备外壳设计
+## License
 
-## 📜 License
-
-[MIT](./LICENSE) — 随便用，注明出处即可。
+[MIT](./LICENSE) — 请注明出处。
 
 ---
 
-> 这是一个 **Vibe Coding** 项目，由 [@plasticpinaceae](https://github.com/plasticpinaceae) 与 AI 协作完成。
+> Vibe Coding 项目，作者 [@plasticpinaceae](https://github.com/plasticpinaceae)。
